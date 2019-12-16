@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zcbdqn.dao.UserMapper">
+
+    <cache
+        eviction="FIFO"
+        flushInterval="60000"
+        size="512"
+        readOnly="true"/>
+
+    <select id="getUsersLikeName" parameterType="string" resultType="user">
+        SELECT * FROM smbms_user WHERE userName LIKE CONCAT('%',#{username},'%')
+    </select>
+
+    <select id="getUsers" parameterType="user" resultMap="userMap">
+        SELECT su.*,sr.roleName userRoleName
+        FROM smbms_user su,smbms_role sr
+        WHERE su.userRole=sr.id
+        AND su.userRole=#{userRole}
+        AND su.userName LIKE CONCAT('%',#{userName},'%')
+    </select>
+
+    <resultMap id="userMap" type="user">
+        <id property="id" column="id"/>
+        <result property="userName" column="userName"/>
+        <result property="userRoleName" column="roleName"/>
+    </resultMap>
+
+    <select id="getUsersByMap" parameterType="map" resultType="user">
+        SELECT * FROM smbms_user WHERE userRole=#{userRole} and userName LIKE CONCAT('%',${username},'%')
+    </select>
+
+    <select id="test" parameterType="string" resultType="user">
+        select * from smbms_user ${params}
+    </select>
+
+
+    <insert id="add" parameterType="user">
+        INSERT INTO `smbms_user` (`userCode`,`userName`,`userPassword`,`gender`,`birthday`,`phone`,`address`,`userRole`,`createdBy`,`creationDate`)
+        VALUES (#{userCode},#{userName},#{userPassword},#{gender},#{birthday},#{phone},#{address},#{userRole},#{createdBy},#{creationDate})
+    </insert>
+    
+    <update id="update" parameterType="user">
+        UPDATE smbms_user SET `userName`=#{userName},`userPassword`=#{userPassword},
+        `gender`=#{gender},`phone`=#{phone},`birthday`=#{birthday},`address`=#{address},`userRole`=#{userRole},
+        `modifyBy`=#{modifyBy},`modifyDate`=#{modifyDate}
+        WHERE id=#{id}
+    </update>
+
+    <update id="updatePwd">
+        update smbms_user set userPassword=#{newPassword} where id=#{id}
+    </update>
+
+    <delete id="delete" parameterType="int">
+        delete from smbms_user where id=#{id}
+    </delete>
+
+    <select id="getUserByRoleId" parameterType="int" resultMap="user_role" useCache="true" flushCache="false">
+        SELECT su.*,sr.id AS sr_id ,sr.roleName,sr.roleCode
+        FROM smbms_user su,smbms_role sr
+        WHERE su.userRole=sr.id AND su.userRole=#{userRole}
+    </select>
+
+    <resultMap id="user_role" type="user">
+        <id column="id" property="id"/>
+        <result property="userCode" column="userCode"/>
+        <result property="userName" column="userName"/>
+        <association property="role" javaType="role" resultMap="roleMap">
+
+        </association>
+    </resultMap>
+
+    <resultMap id="roleMap" type="role">
+        <id column="sr_id" property="id"/>
+        <result property="roleName" column="roleName"/>
+        <result property="roleCode" column="roleCode"/>
+    </resultMap>
+
+    <select id="getUserById" parameterType="int" resultMap="user_address" >
+        SELECT su.*,sa.`id` AS sa_id,sa.`contact`,sa.`addressDesc`,sa.`tel`
+        FROM smbms_user su INNER JOIN smbms_address sa
+        ON su.id=sa.userId AND su.id=#{id}
+    </select>
+    <resultMap id="user_address" type="user">
+        <id column="id" property="id"/>
+        <result property="userCode" column="userCode"/>
+        <result property="userName" column="userName"/>
+        <collection property="addressList" ofType="Address">
+            <id column="sa_id" property="id"/>
+            <result property="contact" column="contact"/>
+            <result property="addressDesc" column="addressDesc"/>
+            <result property="tel" column="tel"/>
+        </collection>
+    </resultMap>
+</mapper>
